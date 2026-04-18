@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Logon Form</title>
+  <style>
+    :root {
+      --bg: #f4f4f7;
+      --card: #ffffff;
+      --text: #121212;
+      --muted: #666;
+      --accent: #df4f1e;
+      --border: #ececec;
+      --link: #d94d1f;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      display: grid;
+      place-items: center;
+      color: var(--text);
+      padding: 20px;
+    }
+
+    .logon-layout {
+      width: min(1100px, 100%);
+      min-height: 620px;
+      background: var(--card);
+      box-shadow: 0 10px 35px rgba(12, 12, 24, 0.12);
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      overflow: hidden;
+    }
+
+    .form-panel {
+      padding: 34px 24px 28px;
+      border-right: 1px solid var(--border);
+      background: #fff;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .brand-icon {
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      background: linear-gradient(140deg, #ff5a1f 0%, #f4bc38 65%, #1f6dff 100%);
+      transform: skewX(-10deg);
+    }
+
+    .brand-name {
+      font-size: 44px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      line-height: 1;
+    }
+
+    .brand-name span {
+      font-weight: 300;
+    }
+
+    h1 {
+      margin: 20px 0 12px;
+      text-align: center;
+      font-size: 36px;
+      font-weight: 400;
+    }
+
+    .signup-note {
+      margin: 0 0 28px;
+      font-size: 13px;
+      text-align: center;
+      color: #2a2a2a;
+    }
+
+    a {
+      color: var(--link);
+      text-underline-offset: 2px;
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      margin: 0 0 8px;
+      font-weight: 600;
+    }
+
+    .field {
+      margin-bottom: 18px;
+      position: relative;
+    }
+
+    input[type="email"],
+    input[type="password"] {
+      width: 100%;
+      height: 45px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0 38px 0 12px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+
+    input[type="email"]:focus,
+    input[type="password"]:focus {
+      border-color: #ca5c3a;
+    }
+
+    .field-icon {
+      position: absolute;
+      right: 12px;
+      top: 37px;
+      color: #8d8d8d;
+      font-size: 15px;
+      pointer-events: none;
+    }
+
+    .remember-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 8px 0 16px;
+      color: #292929;
+      font-size: 14px;
+    }
+
+    input[type="checkbox"] {
+      accent-color: var(--accent);
+      width: 14px;
+      height: 14px;
+      margin: 0;
+    }
+
+    button {
+      width: 100%;
+      border: 0;
+      border-radius: 3px;
+      height: 46px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 18px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button:hover {
+      filter: brightness(0.95);
+    }
+
+    .forgot-link {
+      margin-top: 18px;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    .footer {
+      margin-top: 28px;
+      font-size: 12px;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    .footer-links {
+      margin-top: 8px;
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      font-size: 12px;
+    }
+
+    .art-panel {
+      background:
+        linear-gradient(0deg, rgba(10, 10, 30, 0.22), rgba(10, 10, 30, 0.22)),
+        url("./Logon Page.png") right center / cover no-repeat;
+      position: relative;
+    }
+
+    @media (max-width: 900px) {
+      .logon-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .art-panel {
+        min-height: 280px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="logon-layout">
+    <section class="form-panel">
+      <div class="brand" aria-label="SeedProd">
+        <span class="brand-icon" aria-hidden="true"></span>
+        <div class="brand-name">Seed<span>Prod</span></div>
+      </div>
+
+      <h1>Login</h1>
+      <p class="signup-note">
+        Don't have an account?
+        <a href="#">Get SeedProd Now</a>
+      </p>
+
+      <form>
+        <div class="field">
+          <label for="email">Email Address</label>
+          <input id="email" type="email" autocomplete="email" required>
+          <span class="field-icon">@</span>
+        </div>
+
+        <div class="field">
+          <label for="password">Password</label>
+          <input id="password" type="password" autocomplete="current-password" required>
+          <span class="field-icon">&#128274;</span>
+        </div>
+
+        <label class="remember-row" for="remember">
+          <input id="remember" type="checkbox">
+          Remember Me
+        </label>
+
+        <button type="submit">Log In</button>
+      </form>
+
+      <p class="forgot-link"><a href="#">Forgot Your Password?</a></p>
+
+      <div class="footer">
+        Copyright &copy; 2019 SeedProd, LLC. SeedProd&reg; is a trademark of SeedProd, LLC.
+        <div class="footer-links">
+          <a href="#">Terms of Service</a>
+          <a href="#">Privacy Policy</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="art-panel" aria-hidden="true"></section>
+  </main>
+</body>
+</html>
