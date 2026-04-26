@@ -407,8 +407,12 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
+    // Debug logging
+    console.log('Request body:', JSON.stringify(body, null, 2));
+    
     // Get restaurants for the selected location
     const locationRestaurants = restaurantDatabase[body.location] || restaurantDatabase["Bangalore"];
+    console.log('Location restaurants count:', locationRestaurants.length);
     
     // Filter restaurants based on user preferences
     let filteredRestaurants = locationRestaurants.filter((restaurant: any) => {
@@ -417,16 +421,22 @@ export async function POST(request: NextRequest) {
         const hasMatchingCuisine = restaurant.cuisines.some((cuisine: string) => 
           body.cuisines.some((pref: string) => cuisine.toLowerCase().includes(pref.toLowerCase()))
         );
-        if (!hasMatchingCuisine) return false;
+        if (!hasMatchingCuisine) {
+          console.log(`Filtered out ${restaurant.name} - no matching cuisine`);
+          return false;
+        }
       }
       
       // Filter by rating
       if (body.min_rating && restaurant.rating < body.min_rating) {
+        console.log(`Filtered out ${restaurant.name} - rating too low: ${restaurant.rating} < ${body.min_rating}`);
         return false;
       }
       
       return true;
     });
+    
+    console.log('Filtered restaurants count:', filteredRestaurants.length);
     
     // Sort by rating (highest first) and limit results
     filteredRestaurants = filteredRestaurants
