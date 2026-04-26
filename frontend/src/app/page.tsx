@@ -144,15 +144,16 @@ export default function Home() {
       {/* Search Section */}
       <div className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex flex-col lg:flex-row gap-4">
             {/* Location Selector */}
-            <div className="flex-1">
+            <div className="lg:w-64">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none">
                   <span className="material-symbols-outlined">location_on</span>
                 </span>
                 <select
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full pl-10 pr-8 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 appearance-none bg-white"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                 >
@@ -160,13 +161,17 @@ export default function Home() {
                     <option key={loc} value={loc}>{loc}</option>
                   ))}
                 </select>
+                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none">
+                  <span className="material-symbols-outlined">expand_more</span>
+                </span>
               </div>
             </div>
 
             {/* Search Bar */}
             <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none">
                   <span className="material-symbols-outlined">search</span>
                 </span>
                 <input
@@ -180,80 +185,114 @@ export default function Home() {
             </div>
 
             {/* Search Button */}
-            <button
-              onClick={handleSubmit}
-              disabled={loading}
-              className="px-8 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-400 transition-colors"
-            >
-              {loading ? "Searching..." : "Search"}
-            </button>
+            <div className="lg:w-32">
+              <label className="block text-sm font-medium text-gray-700 mb-2">&nbsp;</label>
+              <button
+                onClick={handleSubmit}
+                disabled={loading}
+                className="w-full px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-400 transition-colors font-medium"
+              >
+                {loading ? "Searching..." : "Search"}
+              </button>
+            </div>
           </div>
 
           {/* Quick Filters */}
-          <div className="flex flex-wrap gap-2 mt-4">
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="px-4 py-2 border border-gray-300 rounded-full text-sm hover:bg-gray-50 flex items-center gap-2"
-            >
-              <span className="material-symbols-outlined text-sm">tune</span>
-              Filters
-              {selectedCuisines.length > 0 && (
-                <span className="bg-red-600 text-white rounded-full px-2 py-0.5 text-xs">
-                  {selectedCuisines.length}
-                </span>
-              )}
-            </button>
-            
-            {/* Quick Budget Filters */}
-            {["low", "medium", "high"].map(b => (
+          <div className="mt-6">
+            <h3 className="text-sm font-medium text-gray-700 mb-3">Quick Filters</h3>
+            <div className="flex flex-wrap gap-2">
               <button
-                key={b}
-                onClick={() => setBudget(b)}
-                className={`px-4 py-2 rounded-full text-sm transition-colors ${
-                  budget === b 
-                    ? "bg-red-600 text-white" 
-                    : "border border-gray-300 hover:bg-gray-50"
-                }`}
+                onClick={() => setShowFilters(!showFilters)}
+                className="px-4 py-2 border border-gray-300 rounded-full text-sm hover:bg-gray-50 flex items-center gap-2 transition-colors"
               >
-                {b.charAt(0).toUpperCase() + b.slice(1)}
+                <span className="material-symbols-outlined text-sm">tune</span>
+                Cuisines
+                {selectedCuisines.length > 0 && (
+                  <span className="bg-red-600 text-white rounded-full px-2 py-0.5 text-xs font-medium">
+                    {selectedCuisines.length}
+                  </span>
+                )}
               </button>
-            ))}
-            
-            {/* Rating Filter */}
-            <button
-              onClick={() => setMinRating(minRating === 4.0 ? 4.5 : 4.0)}
-              className={`px-4 py-2 rounded-full text-sm transition-colors flex items-center gap-1 ${
-                minRating === 4.5 
-                  ? "bg-red-600 text-white" 
-                  : "border border-gray-300 hover:bg-gray-50"
-              }`}
-            >
-              <span className="material-symbols-outlined text-sm">star</span>
-              {minRating}+
-            </button>
+              
+              {/* Quick Budget Filters */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">Budget:</span>
+                {["low", "medium", "high"].map(b => (
+                  <button
+                    key={b}
+                    onClick={() => setBudget(b)}
+                    className={`px-3 py-2 rounded-full text-sm transition-colors ${
+                      budget === b 
+                        ? "bg-red-600 text-white font-medium" 
+                        : "border border-gray-300 hover:bg-gray-50"
+                    }`}
+                  >
+                    {b.charAt(0).toUpperCase() + b.slice(1)}
+                  </button>
+                ))}
+              </div>
+              
+              {/* Rating Filter */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">Rating:</span>
+                <button
+                  onClick={() => setMinRating(minRating === 4.0 ? 4.5 : 4.0)}
+                  className={`px-3 py-2 rounded-full text-sm transition-colors flex items-center gap-1 ${
+                    minRating === 4.5 
+                      ? "bg-red-600 text-white font-medium" 
+                      : "border border-gray-300 hover:bg-gray-50"
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-sm">star</span>
+                  {minRating}+
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Advanced Filters Panel */}
       {showFilters && (
-        <div className="bg-white border-b">
+        <div className="bg-gray-50 border-b">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <h3 className="text-lg font-semibold mb-4">Cuisine Preferences</h3>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Cuisine Preferences</h3>
+              <button
+                onClick={() => setShowFilters(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
               {cuisines.map(cuisine => (
                 <button
                   key={cuisine}
                   onClick={() => toggleCuisine(cuisine)}
-                  className={`px-4 py-2 rounded-full text-sm transition-colors ${
+                  className={`px-3 py-2 rounded-lg text-sm transition-colors text-left ${
                     selectedCuisines.includes(cuisine)
-                      ? "bg-red-600 text-white"
-                      : "border border-gray-300 hover:bg-gray-50"
+                      ? "bg-red-600 text-white font-medium"
+                      : "bg-white border border-gray-300 hover:bg-gray-50 text-gray-700"
                   }`}
                 >
                   {cuisine}
                 </button>
               ))}
+            </div>
+            <div className="mt-4 flex justify-end gap-3">
+              <button
+                onClick={() => setSelectedCuisines([])}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800 text-sm"
+              >
+                Clear All
+              </button>
+              <button
+                onClick={() => setShowFilters(false)}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium"
+              >
+                Apply Filters
+              </button>
             </div>
           </div>
         </div>
