@@ -1,0 +1,36 @@
+{
+  "dataset": "ManikaSaini/zomato-restaurant-recommendation",
+  "split": "train",
+  "output_files": {
+    "csv": "phase1\\data\\processed\\v1\\zomato_cleaned.csv",
+    "sqlite": "phase1\\data\\processed\\v1\\zomato_cleaned.sqlite"
+  },
+  "required_columns": [
+    "restaurant_name",
+    "location",
+    "cuisines",
+    "estimated_cost_for_two",
+    "rating"
+  ],
+  "stats": {
+    "rows_loaded": 51717,
+    "rows_after_standardization": 51717,
+    "rows_dropped_missing_required": 10307,
+    "rows_dropped_invalid_cost": 0,
+    "rows_dropped_invalid_rating": 0,
+    "rows_dropped_duplicates": 32241,
+    "rows_output": 9169
+  },
+  "unique_locations": 92,
+  "unique_cuisine_tags": 105,
+  "rating_summary": {
+    "min": 1.8,
+    "max": 4.9,
+    "mean": 3.642
+  },
+  "cost_summary": {
+    "min": 40,
+    "max": 6000,
+    "median": 400.0
+  }
+}
