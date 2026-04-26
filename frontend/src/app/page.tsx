@@ -4,9 +4,11 @@ import { useState } from "react";
 
 export default function Home() {
   const [location, setLocation] = useState("Bangalore");
+  const [searchQuery, setSearchQuery] = useState("");
   const [budget, setBudget] = useState("medium");
-  const [minRating, setMinRating] = useState(4.2);
-  const [additionalPrefs, setAdditionalPrefs] = useState("");
+  const [minRating, setMinRating] = useState(4.0);
+  const [selectedCuisines, setSelectedCuisines] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState("relevance");
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -15,7 +17,20 @@ export default function Home() {
   const [feedback, setFeedback] = useState<"up" | "down" | null>(null);
   const [toasts, setToasts] = useState<string[]>([]);
 
-  const [selectedCuisines, setSelectedCuisines] = useState<string[]>([]);
+  const [showFilters, setShowFilters] = useState(false);
+
+  const cuisines = [
+    "North Indian", "South Indian", "Chinese", "Italian", "Mexican",
+    "Thai", "Japanese", "Continental", "Fast Food", "Biryani",
+    "Cafe", "Desserts", "Beverages", "Street Food", "Mughlai",
+    "Pizza", "Burger", "Healthy Food", "Seafood", "Kebab"
+  ];
+
+  const locations = [
+    "Bangalore", "Delhi", "Mumbai", "Kolkata", "Chennai",
+    "Hyderabad", "Pune", "Jaipur", "Lucknow", "Chandigarh"
+  ];
+
   const toggleCuisine = (c: string) => {
     setSelectedCuisines((prev) =>
       prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]
@@ -43,10 +58,10 @@ export default function Home() {
       cuisines: selectedCuisines.length > 0 ? selectedCuisines : ["North Indian"],
       min_rating: minRating,
       party_type: "family",
-      additional_preferences: additionalPrefs.trim()
-        ? additionalPrefs.split(",").map((p) => p.trim()).filter(Boolean)
+      additional_preferences: searchQuery.trim()
+        ? searchQuery.split(",").map((p) => p.trim()).filter(Boolean)
         : [],
-      max_results: 3,
+      max_results: 12,
     };
 
     try {
@@ -94,248 +109,314 @@ export default function Home() {
     }
   };
 
+  const getRestaurantImage = (restaurantName: string, cuisine: string) => {
+    const seed = `${restaurantName}-${cuisine}`.replace(/\s+/g, '-').toLowerCase();
+    return `https://picsum.photos/seed/${seed}/400/300.jpg`;
+  };
+
+  const formatCost = (cost: string) => {
+    if (cost.includes('₹')) return cost;
+    const costValue = parseInt(cost) || 800;
+    return `₹${costValue} for two`;
+  };
+
   return (
-    <div className="bg-background text-on-background font-body-md min-h-screen pb-32">
-      {/* TopAppBar */}
-      <header className="fixed top-0 w-full z-50 border-b border-white/20 bg-white/70 backdrop-blur-[30px] shadow-[0_10px_30px_rgba(74,74,74,0.05)]">
-        <div className="flex justify-between items-center h-16 px-5 w-full">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center">
-              <span className="material-symbols-outlined text-white text-sm">person</span>
+    <div className="bg-gray-50 min-h-screen">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center">
+              <h1 className="text-2xl font-bold text-red-600">GourmetAI</h1>
             </div>
-            <h1 className="font-['Space_Grotesk'] font-bold tracking-tight text-xl text-[#D4AF37] uppercase tracking-widest">
-              Gourmet AI
-            </h1>
+            <div className="flex items-center space-x-4">
+              <button className="text-gray-600 hover:text-gray-900">
+                <span className="material-symbols-outlined">search</span>
+              </button>
+              <button className="text-gray-600 hover:text-gray-900">
+                <span className="material-symbols-outlined">account_circle</span>
+              </button>
+            </div>
           </div>
-          <button className="hover:opacity-80 transition-opacity active:scale-95 duration-200">
-            <span className="material-symbols-outlined text-slate-400">tune</span>
-          </button>
         </div>
       </header>
 
-      <main className="pt-24 px-container-margin space-y-xl max-w-2xl mx-auto">
-        {/* Hero & Preference Form */}
-        <section className="space-y-lg">
-          <div className="space-y-xs">
-            <h2 className="font-h1 text-h3 text-on-surface">Find your next meal</h2>
-            <p className="text-tertiary font-body-md">Personalized by your unique taste profile</p>
-          </div>
-          <div className="glass-panel p-lg rounded-[24px] shadow-[0_10px_40px_rgba(74,74,74,0.05)] space-y-lg">
-            {/* Location */}
-            <div className="space-y-xs">
-              <label className="font-label-sm text-label-sm text-outline uppercase">Location</label>
+      {/* Search Section */}
+      <div className="bg-white border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex flex-col md:flex-row gap-4">
+            {/* Location Selector */}
+            <div className="flex-1">
               <div className="relative">
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                  <span className="material-symbols-outlined">location_on</span>
+                </span>
                 <select
-                  className="w-full appearance-none bg-surface-container rounded-xl px-4 py-3 border-none focus:ring-2 focus:ring-primary-container font-body-md text-on-surface"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                 >
-                  <option value="Bangalore">Anywhere in Bangalore</option>
-                  <option value="Indiranagar">Indiranagar</option>
-                  <option value="Koramangala">Koramangala</option>
-                  <option value="Whitefield">Whitefield</option>
-                  <option value="Jayanagar">Jayanagar</option>
-                  <option value="Hsr">HSR Layout</option>
+                  {locations.map(loc => (
+                    <option key={loc} value={loc}>{loc}</option>
+                  ))}
                 </select>
-                <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-outline">expand_more</span>
               </div>
             </div>
 
-            {/* Budget */}
-            <div className="space-y-xs">
-              <label className="font-label-sm text-label-sm text-outline uppercase">Budget</label>
-              <div className="flex gap-sm">
-                {["low", "medium", "high"].map((b) => (
-                  <button
-                    key={b}
-                    onClick={() => setBudget(b)}
-                    className={`flex-1 py-3 px-4 rounded-xl font-medium transition-colors ${
-                      budget === b
-                        ? "bg-primary-container text-white font-bold shadow-md"
-                        : "border border-outline-variant text-on-surface hover:bg-white"
-                    }`}
-                  >
-                    {b.charAt(0).toUpperCase() + b.slice(1)}
-                  </button>
-                ))}
+            {/* Search Bar */}
+            <div className="flex-1">
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                  <span className="material-symbols-outlined">search</span>
+                </span>
+                <input
+                  type="text"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  placeholder="Search for restaurants, cuisines..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
               </div>
             </div>
 
-            {/* Cuisine */}
-            <div className="space-y-xs">
-              <label className="font-label-sm text-label-sm text-outline uppercase">Cuisine Preferences</label>
-              <div className="flex flex-wrap gap-xs">
-                {["North Indian", "Italian", "Pan-Asian", "Continental"].map((c) => (
-                  <button
-                    key={c}
-                    onClick={() => toggleCuisine(c)}
-                    className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors ${
-                      selectedCuisines.includes(c)
-                        ? "border-primary-container bg-primary-container/20 text-primary"
-                        : "border-outline-variant bg-white text-on-surface"
-                    }`}
-                  >
-                    {c}
-                  </button>
-                ))}
-                <button className="px-4 py-2 rounded-full border border-outline-variant bg-white text-on-surface text-sm">+ Add more</button>
-              </div>
-            </div>
-
-            {/* Rating Slider */}
-            <div className="space-y-xs">
-              <div className="flex justify-between items-end">
-                <label className="font-label-sm text-label-sm text-outline uppercase">Minimum Rating</label>
-                <span className="text-primary font-bold text-lg">{minRating.toFixed(1)}★</span>
-              </div>
-              <input
-                className="w-full h-2 bg-surface-container rounded-lg appearance-none cursor-pointer"
-                max="5.0"
-                min="3.0"
-                step="0.1"
-                type="range"
-                value={minRating}
-                onChange={(e) => setMinRating(parseFloat(e.target.value))}
-              />
-            </div>
-
-            {/* Text Area */}
-            <div className="space-y-xs">
-              <label className="font-label-sm text-label-sm text-outline uppercase">Extra cravings...</label>
-              <textarea
-                className="w-full bg-surface-container border-none rounded-xl p-4 focus:ring-2 focus:ring-primary-container font-body-md placeholder:text-outline/50"
-                placeholder="e.g. Needs to be pet-friendly with outdoor seating"
-                rows={2}
-                value={additionalPrefs}
-                onChange={(e) => setAdditionalPrefs(e.target.value)}
-              ></textarea>
-            </div>
-
-            {/* CTA */}
+            {/* Search Button */}
             <button
               onClick={handleSubmit}
               disabled={loading}
-              className={`w-full py-4 rounded-xl text-white font-h3 text-body-lg shadow-[0_10px_20px_rgba(212,175,55,0.3)] active:scale-95 duration-200 transition-transform ${
-                loading ? "bg-primary/70 cursor-not-allowed" : "bg-primary-container"
+              className="px-8 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-400 transition-colors"
+            >
+              {loading ? "Searching..." : "Search"}
+            </button>
+          </div>
+
+          {/* Quick Filters */}
+          <div className="flex flex-wrap gap-2 mt-4">
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="px-4 py-2 border border-gray-300 rounded-full text-sm hover:bg-gray-50 flex items-center gap-2"
+            >
+              <span className="material-symbols-outlined text-sm">tune</span>
+              Filters
+              {selectedCuisines.length > 0 && (
+                <span className="bg-red-600 text-white rounded-full px-2 py-0.5 text-xs">
+                  {selectedCuisines.length}
+                </span>
+              )}
+            </button>
+            
+            {/* Quick Budget Filters */}
+            {["low", "medium", "high"].map(b => (
+              <button
+                key={b}
+                onClick={() => setBudget(b)}
+                className={`px-4 py-2 rounded-full text-sm transition-colors ${
+                  budget === b 
+                    ? "bg-red-600 text-white" 
+                    : "border border-gray-300 hover:bg-gray-50"
+                }`}
+              >
+                {b.charAt(0).toUpperCase() + b.slice(1)}
+              </button>
+            ))}
+            
+            {/* Rating Filter */}
+            <button
+              onClick={() => setMinRating(minRating === 4.0 ? 4.5 : 4.0)}
+              className={`px-4 py-2 rounded-full text-sm transition-colors flex items-center gap-1 ${
+                minRating === 4.5 
+                  ? "bg-red-600 text-white" 
+                  : "border border-gray-300 hover:bg-gray-50"
               }`}
             >
-              {loading ? "Discovering..." : "Get Recommendations"}
+              <span className="material-symbols-outlined text-sm">star</span>
+              {minRating}+
             </button>
-            {error && <p className="text-error text-center text-sm">{error}</p>}
           </div>
-        </section>
+        </div>
+      </div>
 
-        {/* Results Section */}
+      {/* Advanced Filters Panel */}
+      {showFilters && (
+        <div className="bg-white border-b">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <h3 className="text-lg font-semibold mb-4">Cuisine Preferences</h3>
+            <div className="flex flex-wrap gap-2">
+              {cuisines.map(cuisine => (
+                <button
+                  key={cuisine}
+                  onClick={() => toggleCuisine(cuisine)}
+                  className={`px-4 py-2 rounded-full text-sm transition-colors ${
+                    selectedCuisines.includes(cuisine)
+                      ? "bg-red-600 text-white"
+                      : "border border-gray-300 hover:bg-gray-50"
+                  }`}
+                >
+                  {cuisine}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Results Section */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+            {error}
+          </div>
+        )}
+
         {results && !error && (
-          <section className="space-y-lg pb-12">
-            <div className="flex items-center justify-between">
-              <h3 className="font-h2 text-h3 text-on-surface">Top Matches for You</h3>
-              <span className="font-label-sm text-primary uppercase">{results.recommendations?.length || 0} Results</span>
-            </div>
-
-            <div className="bg-primary-container/10 border border-primary-container/30 p-md rounded-xl mb-4">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-lg">🤖</span>
-                <span className="font-bold text-primary text-sm">AI Summary</span>
+          <>
+            {/* Results Header */}
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">
+                  {results.recommendations?.length || 0} restaurants found
+                </h2>
+                <p className="text-gray-600">in {location}</p>
               </div>
-              <p className="text-sm text-on-surface/80 leading-relaxed">
-                {results.summary}
-              </p>
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-gray-600">Sort by:</span>
+                <select
+                  className="border border-gray-300 rounded px-3 py-1 text-sm"
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                >
+                  <option value="relevance">Relevance</option>
+                  <option value="rating">Rating</option>
+                  <option value="cost">Cost</option>
+                </select>
+              </div>
             </div>
 
-            <div className="space-y-lg">
+            {/* Restaurant Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {results.recommendations?.map((item: any, idx: number) => (
-                <article key={idx} className="glass-panel overflow-hidden rounded-[24px] shadow-[0_15px_30px_rgba(0,0,0,0.04)]">
-                  <div className="relative h-56 bg-surface-container flex justify-center items-center">
-                    {/* Placeholder for real images if added later */}
-                    <div className="absolute top-4 left-4 bg-primary-container text-white px-3 py-1 rounded-full flex items-center shadow-sm z-10">
-                      <span className="font-bold text-sm">#{item.rank}</span>
+                <div key={idx} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+                  {/* Restaurant Image */}
+                  <div className="relative h-48">
+                    <img
+                      src={getRestaurantImage(item.restaurant_name, item.cuisine)}
+                      alt={item.restaurant_name}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute top-2 left-2 bg-white px-2 py-1 rounded-full text-xs font-semibold">
+                      #{item.rank || idx + 1}
                     </div>
-                    <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-1 shadow-sm z-10">
-                      <span className="material-symbols-outlined text-[#D4AF37] text-sm" data-weight="fill">star</span>
-                      <span className="font-bold text-sm">{item.rating || "4.5"}</span>
+                    <div className="absolute top-2 right-2 bg-white px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
+                      <span className="text-red-600">★</span>
+                      {item.rating || 4.5}
                     </div>
-                    {/* Simple aesthetic placeholder for restaurant images */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary-container/20 to-primary/40 flex items-center justify-center">
-                       <span className="text-6xl opacity-50">🍽️</span>
-                    </div>
+                    {item.promoted && (
+                      <div className="absolute bottom-2 left-2 bg-red-600 text-white px-2 py-1 rounded text-xs font-semibold">
+                        Promoted
+                      </div>
+                    )}
                   </div>
-                  <div className="p-lg space-y-md">
-                    <div>
-                      <h4 className="font-h3 text-lg">{item.restaurant_name}</h4>
-                      <div className="flex gap-2 text-sm text-tertiary mt-1">
-                        <span>{item.cuisine || "Multi-Cuisine"}</span>
-                        <span>•</span>
-                        <span className="text-primary font-medium">{item.cost || "$$"}</span>
-                        <span>•</span>
+
+                  {/* Restaurant Info */}
+                  <div className="p-4">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                      {item.restaurant_name}
+                    </h3>
+                    <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
+                      <span>{item.cuisine || "Multi-Cuisine"}</span>
+                      <span>•</span>
+                      <span>{formatCost(item.cost || "800")}</span>
+                    </div>
+                    
+                    {/* Additional Info */}
+                    <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
+                      <div className="flex items-center gap-1">
+                        <span className="material-symbols-outlined text-sm">schedule</span>
+                        <span>25-30 min</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="material-symbols-outlined text-sm">location_on</span>
                         <span>{location}</span>
                       </div>
                     </div>
-                    {/* AI Insight Box */}
-                    <div className="bg-secondary-container/20 border border-secondary-fixed-dim/30 p-md rounded-xl">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-lg">✨</span>
-                        <span className="font-bold text-secondary text-sm">Why this?</span>
+
+                    {/* AI Explanation */}
+                    {item.explanation && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="material-symbols-outlined text-blue-600 text-sm">lightbulb</span>
+                          <span className="text-sm font-semibold text-blue-900">Why you'll like it</span>
+                        </div>
+                        <p className="text-sm text-blue-800">{item.explanation}</p>
                       </div>
-                      <p className="text-sm text-on-surface/80 leading-relaxed">
-                        {item.explanation}
-                      </p>
-                    </div>
-                    <div className="flex justify-between items-center pt-2">
-                      <button className="text-primary font-bold text-sm flex items-center gap-1">
-                        View Menu <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                    )}
+
+                    {/* Action Buttons */}
+                    <div className="flex justify-between items-center">
+                      <button className="text-red-600 hover:text-red-700 font-medium text-sm">
+                        View Menu
                       </button>
-                      <div className="flex gap-sm">
+                      <div className="flex gap-2">
                         <button
                           onClick={() => submitFeedback("up")}
-                          className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all ${
-                            feedback === "up" ? "bg-primary text-white border-primary" : "border-outline-variant hover:bg-surface text-outline"
+                          className={`p-2 rounded-full transition-colors ${
+                            feedback === "up" 
+                              ? "bg-green-100 text-green-600" 
+                              : "text-gray-400 hover:text-green-600"
                           }`}
                         >
-                          <span className="material-symbols-outlined text-lg">thumb_up</span>
+                          <span className="material-symbols-outlined text-sm">thumb_up</span>
                         </button>
                         <button
                           onClick={() => submitFeedback("down")}
-                          className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all ${
-                            feedback === "down" ? "bg-error text-white border-error" : "border-outline-variant hover:bg-surface text-outline"
+                          className={`p-2 rounded-full transition-colors ${
+                            feedback === "down" 
+                              ? "bg-red-100 text-red-600" 
+                              : "text-gray-400 hover:text-red-600"
                           }`}
                         >
-                          <span className="material-symbols-outlined text-lg">thumb_down</span>
+                          <span className="material-symbols-outlined text-sm">thumb_down</span>
                         </button>
                       </div>
                     </div>
                   </div>
-                </article>
+                </div>
               ))}
             </div>
-          </section>
+          </>
         )}
-      </main>
 
-      {/* BottomNavBar */}
-      <nav className="fixed bottom-0 left-0 w-full h-20 flex justify-around items-center px-6 pb-safe rounded-t-3xl bg-white/80 backdrop-blur-[40px] border-t border-white/20 shadow-[0_-10px_40px_rgba(74,74,74,0.08)] z-50">
-        <button className="flex flex-col items-center justify-center text-[#D4AF37] font-bold active:scale-90 duration-300">
-          <span className="material-symbols-outlined" data-weight="fill">explore</span>
-          <span className="font-['Space_Grotesk'] text-[10px] font-medium uppercase tracking-tighter mt-1">Discover</span>
-        </button>
-        <button className="flex flex-col items-center justify-center text-slate-400 active:scale-90 duration-300 hover:text-[#D4AF37] transition-colors">
-          <span className="material-symbols-outlined">bookmark</span>
-          <span className="font-['Space_Grotesk'] text-[10px] font-medium uppercase tracking-tighter mt-1">Saved</span>
-        </button>
-        <button className="flex flex-col items-center justify-center text-slate-400 active:scale-90 duration-300 hover:text-[#D4AF37] transition-colors">
-          <span className="material-symbols-outlined">restaurant</span>
-          <span className="font-['Space_Grotesk'] text-[10px] font-medium uppercase tracking-tighter mt-1">Taste Profile</span>
-        </button>
-        <button className="flex flex-col items-center justify-center text-slate-400 active:scale-90 duration-300 hover:text-[#D4AF37] transition-colors">
-          <span className="material-symbols-outlined">person</span>
-          <span className="font-['Space_Grotesk'] text-[10px] font-medium uppercase tracking-tighter mt-1">Account</span>
-        </button>
-      </nav>
+        {/* Empty State */}
+        {!results && !loading && !error && (
+          <div className="text-center py-12">
+            <div className="text-6xl mb-4">🍽️</div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              Discover amazing restaurants
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Search for restaurants by location, cuisine, or your preferences
+            </p>
+            <button
+              onClick={handleSubmit}
+              className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            >
+              Explore Restaurants
+            </button>
+          </div>
+        )}
 
-      {/* Toasts */}
-      <div className="fixed bottom-24 right-4 z-50 space-y-2">
+        {/* Loading State */}
+        {loading && (
+          <div className="text-center py-12">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+            <p className="mt-4 text-gray-600">Finding the best restaurants for you...</p>
+          </div>
+        )}
+      </div>
+
+      {/* Toast Notifications */}
+      <div className="fixed bottom-4 right-4 z-50 space-y-2">
         {toasts.map((msg, i) => (
-          <div key={i} className="bg-[#D4AF37] text-white px-4 py-2 rounded shadow-lg animate-fade-in">
+          <div key={i} className="bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg">
             {msg}
           </div>
         ))}
