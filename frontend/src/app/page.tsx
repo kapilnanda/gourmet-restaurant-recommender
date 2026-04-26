@@ -55,7 +55,7 @@ export default function Home() {
     const payload = {
       location: location,
       budget,
-      cuisines: selectedCuisines.length > 0 ? selectedCuisines : ["North Indian"],
+      cuisines: selectedCuisines,
       min_rating: minRating,
       party_type: "family",
       additional_preferences: searchQuery.trim()
