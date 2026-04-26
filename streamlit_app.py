@@ -12,8 +12,8 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# API endpoint (will work both locally and on Streamlit Cloud)
-API_BASE = os.getenv("API_BASE_URL", "http://localhost:8000")
+# API endpoint - use Next.js frontend API routes
+API_BASE = os.getenv("API_BASE_URL", "https://gourmet-restaurant-recommender.vercel.app")
 
 def main():
     st.title("🍽️ Gourmet Restaurant Recommender")
@@ -25,6 +25,7 @@ def main():
     # Location input
     location = st.sidebar.text_input(
         "Location",
+        value="Bangalore",
         placeholder="e.g., Bangalore, Delhi, Mumbai",
         help="Enter your preferred city or area"
     )
@@ -88,7 +89,7 @@ def main():
     
     # Main content area
     if st.sidebar.button("🚀 Get Recommendations", type="primary"):
-        if not location or not cuisines:
+        if not location.strip() or not cuisines:
             st.error("❌ Please provide both location and at least one cuisine preference!")
             return
         
