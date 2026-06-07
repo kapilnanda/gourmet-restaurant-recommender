@@ -24,7 +24,7 @@
 - Modify: `backend/app/main.py` — add `POST /search`
 - Create: `backend/tests/test_job_fetcher.py` — unit tests for `build_query_params`, `normalize_job`, and `fetch_jobs` (mocked HTTP)
 - Modify: `backend/tests/test_main.py` — API tests for `/search`
-- Create: `.env.example` (repo root) — documents `ADZUNA_APP_ID`, `ADZUNA_APP_KEY`, `GEMINI_API_KEY` (placeholder for Phase 3) with setup instructions
+- Create: `.env.example` (repo root) — documents `ADZUNA_APP_ID`, `ADZUNA_APP_KEY`, `GROQ_API_KEY` (placeholder for Phase 3) with setup instructions
 - Modify: `docker-compose.yml` — pass `.env` through to the backend service
 - Create: `frontend/results.py` — `render_raw_results(jobs)`; renders the unranked list
 - Modify: `frontend/app.py` — add the "Search" button and wire in `render_raw_results`
@@ -124,8 +124,8 @@ Expected: PASS (2 passed)
 ADZUNA_APP_ID=your-adzuna-app-id
 ADZUNA_APP_KEY=your-adzuna-app-key
 
-# Gemini LLM — https://aistudio.google.com/  (used starting Phase 3)
-GEMINI_API_KEY=your-gemini-api-key
+# Groq LLM — https://console.groq.com/  (used starting Phase 3)
+GROQ_API_KEY=your-groq-api-key
 ```
 
 - [ ] **Step 7: Wire `.env` into `docker-compose.yml`**

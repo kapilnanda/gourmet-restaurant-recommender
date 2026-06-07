@@ -71,7 +71,7 @@ The backend (FastAPI, Python) owns all business logic — the `Profile` model an
 - API failures → backend returns a structured error payload; frontend shows an inline message ("No jobs found for these filters" / "Job search API unavailable, try again"); app does not crash
 - LLM scoring failures for individual jobs → backend skips with a logged warning, continues with the rest of the batch, and returns the partial results
 - Resume parsing failures → backend returns a "parsing failed" response; frontend falls back to the empty/manual form with a message that parsing didn't work
-- Missing/invalid API keys → backend fails fast on startup with a clear log message; first-run setup instructions (e.g., "Add your Adzuna and Gemini keys to the backend's `.env`") are shown to the user if the backend reports it's unconfigured
+- Missing/invalid API keys → backend fails fast on startup with a clear log message; first-run setup instructions (e.g., "Add your Adzuna and Groq keys to the backend's `.env`") are shown to the user if the backend reports it's unconfigured
 - Frontend ↔ backend connectivity issues (backend container not reachable) → frontend shows a clear "Backend unavailable, please try again" message rather than a stack trace
 
 ## Testing
@@ -86,7 +86,7 @@ The backend (FastAPI, Python) owns all business logic — the `Profile` model an
 - Docker and Docker Compose installed locally; the app is run via `docker-compose up`
 - No existing external API access — implementation will need to:
   - Sign up for a job aggregator API (Adzuna or JSearch)
-  - Obtain a Gemini API key from Google AI Studio (used for the LLM Matcher and resume parsing, via the `google-generativeai` Python SDK; free tier available, e.g. Gemini 1.5/2.0 Flash)
+  - Obtain a Groq API key from the Groq Console (used for the LLM Matcher and resume parsing, via the `groq` Python SDK; free tier available, e.g. Llama 3.1/3.3 models served on Groq's fast inference)
 - Both keys configured via a `.env` file consumed by the backend container (mounted/passed through `docker-compose.yml`), with setup instructions shown if missing
 
 ## Implementation Phases

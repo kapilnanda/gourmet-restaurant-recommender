@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. Assumes Phase 2 (`docs/superpowers/plans/2026-06-07-phase2-job-fetcher.md`) is complete and merged.
 
-**Goal:** Integrate Gemini as the LLM provider in the backend. Build pure, independently-tested prompt-construction and response-parsing functions for fit-scoring each fetched job against the user's profile (score 0-100, rationale, mismatch flags), fold scoring into `POST /search`, sort results by fit score descending, and skip per-job failures without failing the whole batch. Update the frontend to render scored results — this is where AI-driven ranking comes alive.
+**Goal:** Integrate Groq as the LLM provider in the backend. Build pure, independently-tested prompt-construction and response-parsing functions for fit-scoring each fetched job against the user's profile (score 0-100, rationale, mismatch flags), fold scoring into `POST /search`, sort results by fit score descending, and skip per-job failures without failing the whole batch. Update the frontend to render scored results — this is where AI-driven ranking comes alive.
 
 **Architecture:** New backend module `app/llm_matcher.py` containing:
 - `MatchResult` (Pydantic model: `score: int`, `rationale: str`, `mismatches: list[str]`)
@@ -14,16 +14,16 @@
 
 `POST /search` now calls `fetch_jobs` then `score_jobs`, and returns the sorted, annotated list. The frontend renders each result with its fit score, rationale, and mismatch flags, already sorted by the backend.
 
-**Tech Stack additions:** `google-generativeai` (Gemini SDK)
+**Tech Stack additions:** `groq` (Groq Python SDK)
 
 ---
 
 ## File Structure
 
-- Modify: `backend/requirements.txt` — add `google-generativeai`
-- Modify: `backend/app/config.py` — add `gemini_api_key` to `Settings`
+- Modify: `backend/requirements.txt` — add `groq`
+- Modify: `backend/app/config.py` — add `groq_api_key` to `Settings`
 - Create: `backend/app/llm_matcher.py` — `MatchResult`, `ScoredJob`, `build_match_prompt`, `parse_match_response`, `score_job`, `score_jobs`, `MatchParseError`, `MatchScoringError`
-- Create: `backend/tests/test_llm_matcher.py` — unit tests for prompt construction, response parsing, and batch scoring (mocking the Gemini client)
+- Create: `backend/tests/test_llm_matcher.py` — unit tests for prompt construction, response parsing, and batch scoring (mocking the Groq client)
 - Modify: `backend/app/main.py` — wire `score_jobs` into `POST /search`
 - Modify: `backend/tests/test_main.py` — update `/search` tests to cover the scored/sorted response shape
 - Modify: `frontend/results.py` — render fit score, rationale, and mismatch flags; rename to reflect scored results (or add a new render function alongside the raw one)
@@ -31,38 +31,38 @@
 
 ---
 
-## Task 1: Gemini Config
+## Task 1: Groq Config
 
 **Files:**
 - Modify: `backend/app/config.py`
 - Modify: `backend/tests/test_config.py`
 - Modify: `.env.example`
 
-- [ ] **Step 1: Obtain a Gemini API key**
+- [ ] **Step 1: Obtain a Groq API key**
 
-Sign up at Google AI Studio, generate a free-tier API key (e.g., for Gemini 2.0/1.5 Flash). Confirm it works with a one-off script using `google-generativeai`.
+Sign up at the Groq Console, generate a free-tier API key (e.g., for the `llama-3.3-70b-versatile` model). Confirm it works with a one-off script using the `groq` SDK.
 
 - [ ] **Step 2: Write the failing test for the extended `Settings`**
 
-Modify `backend/tests/test_config.py` — update both existing tests to also set/expect `GEMINI_API_KEY` / `gemini_api_key`:
+Modify `backend/tests/test_config.py` — update both existing tests to also set/expect `GROQ_API_KEY` / `groq_api_key`:
 
 ```python
 def test_settings_loads_from_environment(monkeypatch):
     monkeypatch.setenv("ADZUNA_APP_ID", "abc123")
     monkeypatch.setenv("ADZUNA_APP_KEY", "secret")
-    monkeypatch.setenv("GEMINI_API_KEY", "gemini-secret")
+    monkeypatch.setenv("GROQ_API_KEY", "groq-secret")
 
     settings = Settings.from_env()
 
     assert settings.adzuna_app_id == "abc123"
     assert settings.adzuna_app_key == "secret"
-    assert settings.gemini_api_key == "gemini-secret"
+    assert settings.groq_api_key == "groq-secret"
 
 
 def test_settings_raises_clear_error_when_missing(monkeypatch):
     monkeypatch.delenv("ADZUNA_APP_ID", raising=False)
     monkeypatch.delenv("ADZUNA_APP_KEY", raising=False)
-    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("GROQ_API_KEY", raising=False)
 
     with pytest.raises(ConfigError, match="ADZUNA_APP_ID"):
         Settings.from_env()
@@ -71,7 +71,7 @@ def test_settings_raises_clear_error_when_missing(monkeypatch):
 - [ ] **Step 3: Run the tests to verify they fail**
 
 Run: `pytest tests/test_config.py -v`
-Expected: FAIL — `Settings` has no `gemini_api_key` field/argument
+Expected: FAIL — `Settings` has no `groq_api_key` field/argument
 
 - [ ] **Step 4: Extend `Settings`**
 
@@ -82,20 +82,20 @@ Modify `backend/app/config.py`:
 class Settings:
     adzuna_app_id: str
     adzuna_app_key: str
-    gemini_api_key: str
+    groq_api_key: str
 
     @classmethod
     def from_env(cls) -> "Settings":
         app_id = os.environ.get("ADZUNA_APP_ID")
         app_key = os.environ.get("ADZUNA_APP_KEY")
-        gemini_key = os.environ.get("GEMINI_API_KEY")
+        groq_key = os.environ.get("GROQ_API_KEY")
 
         missing = [
             name
             for name, value in [
                 ("ADZUNA_APP_ID", app_id),
                 ("ADZUNA_APP_KEY", app_key),
-                ("GEMINI_API_KEY", gemini_key),
+                ("GROQ_API_KEY", groq_key),
             ]
             if not value
         ]
@@ -105,7 +105,7 @@ class Settings:
                 "Add them to your .env file (see .env.example)."
             )
 
-        return cls(adzuna_app_id=app_id, adzuna_app_key=app_key, gemini_api_key=gemini_key)
+        return cls(adzuna_app_id=app_id, adzuna_app_key=app_key, groq_api_key=groq_key)
 ```
 
 - [ ] **Step 5: Run the tests to verify they pass**
@@ -113,13 +113,13 @@ class Settings:
 Run: `pytest tests/test_config.py -v`
 Expected: PASS (2 passed)
 
-- [ ] **Step 6: Update `.env.example`** — remove the "(used starting Phase 3)" comment next to `GEMINI_API_KEY` since it's now required.
+- [ ] **Step 6: Update `.env.example`** — remove the "(used starting Phase 3)" comment next to `GROQ_API_KEY` since it's now required.
 
 - [ ] **Step 7: Commit**
 
 ```bash
 git add backend/app/config.py backend/tests/test_config.py .env.example
-git commit -m "Add Gemini API key to backend Settings"
+git commit -m "Add Groq API key to backend Settings"
 ```
 
 ---
@@ -381,10 +381,10 @@ git commit -m "Add build_match_prompt for fit-scoring jobs against a profile"
 - Modify: `backend/app/llm_matcher.py`
 - Modify: `backend/tests/test_llm_matcher.py`
 
-- [ ] **Step 1: Add `google-generativeai` to `backend/requirements.txt`**
+- [ ] **Step 1: Add `groq` to `backend/requirements.txt`**
 
 ```
-google-generativeai==0.8.3
+groq==0.11.0
 ```
 
 Run: `pip install -r backend/requirements.txt`
@@ -402,9 +402,11 @@ from app.llm_matcher import MatchScoringError, score_job, score_jobs
 def _llm_client(response_text: str | Exception):
     client = MagicMock()
     if isinstance(response_text, Exception):
-        client.generate_content.side_effect = response_text
+        client.chat.completions.create.side_effect = response_text
     else:
-        client.generate_content.return_value = MagicMock(text=response_text)
+        message = MagicMock(content=response_text)
+        choice = MagicMock(message=message)
+        client.chat.completions.create.return_value = MagicMock(choices=[choice])
     return client
 
 
@@ -415,7 +417,7 @@ def test_score_job_returns_scored_job_on_success():
 
     assert scored.job.title == "Backend Engineer"
     assert scored.match.score == 82
-    client.generate_content.assert_called_once()
+    client.chat.completions.create.assert_called_once()
 
 
 def test_score_job_raises_match_scoring_error_on_llm_failure():
@@ -442,8 +444,8 @@ def test_score_jobs_skips_failures_and_sorts_by_score_desc(caplog):
 
     # score_jobs takes a single client; simulate per-job behaviour via a router client.
     router = MagicMock()
-    router.generate_content.side_effect = lambda prompt: (
-        clients[_job_title_from_prompt(prompt)].generate_content(prompt)
+    router.chat.completions.create.side_effect = lambda **kwargs: (
+        clients[_job_title_from_prompt(kwargs["messages"][0]["content"])].chat.completions.create(**kwargs)
     )
 
     scored = score_jobs(_profile(), jobs, router)
@@ -470,24 +472,30 @@ Expected: FAIL with `ImportError: cannot import name 'score_job'`
 
 - [ ] **Step 4: Implement `score_job` and `score_jobs`**
 
-Append to `backend/app/llm_matcher.py` (add `import logging` to the imports):
+Append to `backend/app/llm_matcher.py` (add `import logging` to the imports). The Groq client follows the OpenAI-compatible chat-completions shape: `client.chat.completions.create(model=..., messages=[...])` returns a response whose text lives at `response.choices[0].message.content`.
 
 ```python
 import logging
 
 logger = logging.getLogger(__name__)
 
+GROQ_MODEL = "llama-3.3-70b-versatile"
+
 
 def score_job(profile: Profile, job: Job, client) -> ScoredJob:
     prompt = build_match_prompt(profile, job)
 
     try:
-        response = client.generate_content(prompt)
+        response = client.chat.completions.create(
+            model=GROQ_MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.2,
+        )
     except Exception as exc:
         raise MatchScoringError(f"LLM call failed for '{job.title}': {exc}") from exc
 
     try:
-        match = parse_match_response(response.text)
+        match = parse_match_response(response.choices[0].message.content)
     except MatchParseError as exc:
         raise MatchScoringError(f"Could not parse LLM response for '{job.title}': {exc}") from exc
 
@@ -543,7 +551,7 @@ from unittest.mock import MagicMock, patch
 def test_post_search_returns_scored_sorted_jobs(monkeypatch):
     monkeypatch.setenv("ADZUNA_APP_ID", "abc123")
     monkeypatch.setenv("ADZUNA_APP_KEY", "secret")
-    monkeypatch.setenv("GEMINI_API_KEY", "gemini-secret")
+    monkeypatch.setenv("GROQ_API_KEY", "groq-secret")
 
     client.post("/profile", json=_valid_payload())
     respx.get("https://api.adzuna.com/v1/api/jobs/in/search/1").mock(
@@ -551,9 +559,8 @@ def test_post_search_returns_scored_sorted_jobs(monkeypatch):
     )
 
     fake_llm = MagicMock()
-    fake_llm.generate_content.return_value = MagicMock(
-        text='{"score": 77, "rationale": "Good overall fit.", "mismatches": []}'
-    )
+    fake_message = MagicMock(content='{"score": 77, "rationale": "Good overall fit.", "mismatches": []}')
+    fake_llm.chat.completions.create.return_value = MagicMock(choices=[MagicMock(message=fake_message)])
 
     with patch("app.main._build_llm_client", return_value=fake_llm):
         response = client.post("/search")
@@ -571,7 +578,7 @@ def test_post_search_returns_scored_sorted_jobs(monkeypatch):
 def test_post_search_returns_empty_list_message_when_all_scoring_fails(monkeypatch):
     monkeypatch.setenv("ADZUNA_APP_ID", "abc123")
     monkeypatch.setenv("ADZUNA_APP_KEY", "secret")
-    monkeypatch.setenv("GEMINI_API_KEY", "gemini-secret")
+    monkeypatch.setenv("GROQ_API_KEY", "groq-secret")
 
     client.post("/profile", json=_valid_payload())
     respx.get("https://api.adzuna.com/v1/api/jobs/in/search/1").mock(
@@ -579,7 +586,7 @@ def test_post_search_returns_empty_list_message_when_all_scoring_fails(monkeypat
     )
 
     failing_llm = MagicMock()
-    failing_llm.generate_content.side_effect = RuntimeError("boom")
+    failing_llm.chat.completions.create.side_effect = RuntimeError("boom")
 
     with patch("app.main._build_llm_client", return_value=failing_llm):
         response = client.post("/search")
@@ -602,14 +609,13 @@ Expected: FAIL — response shape doesn't include `match`, and `_build_llm_clien
 Modify `backend/app/main.py`:
 
 ```python
-import google.generativeai as genai
+from groq import Groq
 
 from app.llm_matcher import score_jobs
 
 
 def _build_llm_client(settings: Settings):
-    genai.configure(api_key=settings.gemini_api_key)
-    return genai.GenerativeModel("gemini-2.0-flash")
+    return Groq(api_key=settings.groq_api_key)
 
 
 @app.post("/search")
@@ -707,7 +713,7 @@ Run: `docker-compose up --build`
 
 Manually verify:
 1. After saving a profile and clicking "Search", results render sorted by fit score (highest first), each showing the score, rationale, and any mismatch flags.
-2. Temporarily make the Gemini key invalid and confirm `/search` still returns gracefully (either an empty-with-message result if all scoring fails, or a clear `503` setup message) — the app must not crash.
+2. Temporarily make the Groq key invalid and confirm `/search` still returns gracefully (either an empty-with-message result if all scoring fails, or a clear `503` setup message) — the app must not crash.
 
 - [ ] **Step 4: Commit**
 

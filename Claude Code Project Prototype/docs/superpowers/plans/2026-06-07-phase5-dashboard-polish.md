@@ -41,7 +41,7 @@ Append to `backend/tests/test_main.py`:
 def test_config_status_reports_all_configured(monkeypatch):
     monkeypatch.setenv("ADZUNA_APP_ID", "abc123")
     monkeypatch.setenv("ADZUNA_APP_KEY", "secret")
-    monkeypatch.setenv("GEMINI_API_KEY", "gemini-secret")
+    monkeypatch.setenv("GROQ_API_KEY", "groq-secret")
 
     response = client.get("/config/status")
 
@@ -53,14 +53,14 @@ def test_config_status_reports_all_configured(monkeypatch):
 def test_config_status_reports_missing_keys_without_leaking_values(monkeypatch):
     monkeypatch.setenv("ADZUNA_APP_ID", "abc123")
     monkeypatch.delenv("ADZUNA_APP_KEY", raising=False)
-    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("GROQ_API_KEY", raising=False)
 
     response = client.get("/config/status")
 
     assert response.status_code == 200
     body = response.json()
     assert body["configured"] is False
-    assert set(body["missing"]) == {"ADZUNA_APP_KEY", "GEMINI_API_KEY"}
+    assert set(body["missing"]) == {"ADZUNA_APP_KEY", "GROQ_API_KEY"}
     assert "abc123" not in response.text  # never echoes configured values
 ```
 
@@ -76,7 +76,7 @@ Modify `backend/app/config.py` — add a classmethod that reports missing keys w
 ```python
     @staticmethod
     def missing_keys() -> list[str]:
-        required = ["ADZUNA_APP_ID", "ADZUNA_APP_KEY", "GEMINI_API_KEY"]
+        required = ["ADZUNA_APP_ID", "ADZUNA_APP_KEY", "GROQ_API_KEY"]
         return [name for name in required if not os.environ.get(name)]
 ```
 
@@ -413,7 +413,7 @@ def render_setup_banner() -> None:
     st.warning(
         f"Setup needed: missing environment variable(s) **{missing}**. "
         "Copy `.env.example` to `.env` at the project root, fill in your "
-        "Adzuna and Gemini API keys, then restart the backend "
+        "Adzuna and Groq API keys, then restart the backend "
         "(`docker-compose up --build`)."
     )
 ```
@@ -454,8 +454,8 @@ Walk through every error-handling scenario named in the design spec's "Error Han
 
 - [ ] **Step 1: API failures** — temporarily set an invalid `ADZUNA_APP_KEY`, run a search, confirm "Job search API unavailable, please try again shortly." appears (from Phase 2's `/search` 502 handling) and the app stays usable.
 - [ ] **Step 2: No results** — search with an unrealistic filter combination that returns zero listings; confirm "No jobs found for these filters." appears (from Phase 2/3's empty-results handling).
-- [ ] **Step 3: LLM scoring failures** — temporarily set an invalid `GEMINI_API_KEY`, run a search with valid job results; confirm the app shows either a partial ranked list (if some jobs scored) or "No jobs found for these filters." (if all failed) per Phase 3's skip-on-failure behavior, and check the backend logs show per-job warnings.
-- [ ] **Step 4: Resume parsing failures** — upload an unsupported file type and, separately, a resume while the Gemini key is invalid; confirm both show "We couldn't parse your resume. Please fill in the form manually." (Phase 4) and the manual form remains fully usable.
+- [ ] **Step 3: LLM scoring failures** — temporarily set an invalid `GROQ_API_KEY`, run a search with valid job results; confirm the app shows either a partial ranked list (if some jobs scored) or "No jobs found for these filters." (if all failed) per Phase 3's skip-on-failure behavior, and check the backend logs show per-job warnings.
+- [ ] **Step 4: Resume parsing failures** — upload an unsupported file type and, separately, a resume while the Groq key is invalid; confirm both show "We couldn't parse your resume. Please fill in the form manually." (Phase 4) and the manual form remains fully usable.
 - [ ] **Step 5: Missing/invalid API keys** — covered by Task 5's setup banner; confirm it appears on first run with a fresh `.env` copied from `.env.example` with placeholder values.
 - [ ] **Step 6: Backend unreachable** — covered by Task 5's banner and the per-action `requests.RequestException` handlers added in Phases 1-4 (`profile_form.py`, `app.py`'s search handler, `resume_upload.py`, `setup_banner.py`); confirm each shows "Backend unavailable, please try again." (or the banner's variant) rather than an unhandled exception.
 - [ ] **Step 7: Record findings** — if every path already behaves correctly, no code changes are needed; simply check off this task. If a gap is found, fix it directly in the owning file and note the fix in the commit message below.

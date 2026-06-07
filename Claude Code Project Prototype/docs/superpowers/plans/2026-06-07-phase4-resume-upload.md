@@ -383,9 +383,11 @@ from app.resume_parser import ResumeParsingFailed, parse_resume
 def _llm_client(response_text):
     client = MagicMock()
     if isinstance(response_text, Exception):
-        client.generate_content.side_effect = response_text
+        client.chat.completions.create.side_effect = response_text
     else:
-        client.generate_content.return_value = MagicMock(text=response_text)
+        message = MagicMock(content=response_text)
+        choice = MagicMock(message=message)
+        client.chat.completions.create.return_value = MagicMock(choices=[choice])
     return client
 
 
@@ -396,7 +398,7 @@ def test_parse_resume_returns_prefill_on_success():
     prefill = parse_resume("sample_resume.pdf", content, client)
 
     assert prefill.role == "Backend Engineer"
-    client.generate_content.assert_called_once()
+    client.chat.completions.create.assert_called_once()
 
 
 def test_parse_resume_raises_resume_parsing_failed_on_unsupported_file():
@@ -429,7 +431,7 @@ Expected: FAIL with `ImportError: cannot import name 'parse_resume'`
 
 - [ ] **Step 3: Implement `parse_resume`**
 
-Append to `backend/app/resume_parser.py`:
+Append to `backend/app/resume_parser.py` (add `from app.llm_matcher import GROQ_MODEL` to the imports — reusing the same Groq model constant defined in Phase 3's `llm_matcher` rather than duplicating it):
 
 ```python
 def parse_resume(filename: str, content: bytes, client) -> ProfilePrefill:
@@ -441,12 +443,16 @@ def parse_resume(filename: str, content: bytes, client) -> ProfilePrefill:
     prompt = build_resume_prompt(text)
 
     try:
-        response = client.generate_content(prompt)
+        response = client.chat.completions.create(
+            model=GROQ_MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.2,
+        )
     except Exception as exc:
         raise ResumeParsingFailed(f"LLM call failed while parsing resume: {exc}") from exc
 
     try:
-        return parse_resume_response(response.text)
+        return parse_resume_response(response.choices[0].message.content)
     except ResumeParseError as exc:
         raise ResumeParsingFailed(str(exc)) from exc
 ```
@@ -489,10 +495,11 @@ FIXTURES = Path(__file__).parent / "fixtures"
 def test_post_resume_returns_prefill_on_success(monkeypatch):
     monkeypatch.setenv("ADZUNA_APP_ID", "abc123")
     monkeypatch.setenv("ADZUNA_APP_KEY", "secret")
-    monkeypatch.setenv("GEMINI_API_KEY", "gemini-secret")
+    monkeypatch.setenv("GROQ_API_KEY", "groq-secret")
 
     fake_llm = MagicMock()
-    fake_llm.generate_content.return_value = MagicMock(text=VALID_PREFILL_RESPONSE)
+    fake_message = MagicMock(content=VALID_PREFILL_RESPONSE)
+    fake_llm.chat.completions.create.return_value = MagicMock(choices=[MagicMock(message=fake_message)])
 
     content = (FIXTURES / "sample_resume.pdf").read_bytes()
 
@@ -510,7 +517,7 @@ def test_post_resume_returns_prefill_on_success(monkeypatch):
 def test_post_resume_returns_structured_failure_on_unsupported_type(monkeypatch):
     monkeypatch.setenv("ADZUNA_APP_ID", "abc123")
     monkeypatch.setenv("ADZUNA_APP_KEY", "secret")
-    monkeypatch.setenv("GEMINI_API_KEY", "gemini-secret")
+    monkeypatch.setenv("GROQ_API_KEY", "groq-secret")
 
     response = client.post(
         "/resume",
@@ -526,10 +533,10 @@ def test_post_resume_returns_structured_failure_on_unsupported_type(monkeypatch)
 def test_post_resume_returns_structured_failure_on_llm_error(monkeypatch):
     monkeypatch.setenv("ADZUNA_APP_ID", "abc123")
     monkeypatch.setenv("ADZUNA_APP_KEY", "secret")
-    monkeypatch.setenv("GEMINI_API_KEY", "gemini-secret")
+    monkeypatch.setenv("GROQ_API_KEY", "groq-secret")
 
     failing_llm = MagicMock()
-    failing_llm.generate_content.side_effect = RuntimeError("boom")
+    failing_llm.chat.completions.create.side_effect = RuntimeError("boom")
 
     content = (FIXTURES / "sample_resume.pdf").read_bytes()
 
@@ -754,7 +761,7 @@ Expected: All tests pass, no failures or errors.
 
 - [ ] **Step 2: Full-stack smoke test**
 
-Run: `docker-compose up --build`. Confirm: resume upload → pre-filled form → review/edit → save → search, and the parsing-failure fallback path (bad file type, or temporarily-broken Gemini key) shows a clear inline message without blocking the manual form. Stop with `docker-compose down`.
+Run: `docker-compose up --build`. Confirm: resume upload → pre-filled form → review/edit → save → search, and the parsing-failure fallback path (bad file type, or temporarily-broken Groq key) shows a clear inline message without blocking the manual form. Stop with `docker-compose down`.
 
 - [ ] **Step 3: Confirm working tree is clean**
 
