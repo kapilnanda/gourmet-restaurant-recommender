@@ -73,6 +73,18 @@ Everything runs locally as a single Streamlit process — no backend server, no 
   - Obtain an LLM provider API key (Anthropic recommended)
 - Both keys configured via `.env` / local config, with setup instructions shown if missing
 
+## Implementation Phases
+
+The build is divided into five phases. Each phase produces working, demoable software on its own:
+
+1. **Profile Form** — Streamlit app skeleton with the structured profile form (role, experience, location, skills, salary, work mode, notice period, seniority). No external integrations; captures and displays the profile in session state. Establishes the working UI foundation.
+2. **Job Fetcher** — Sign up for and integrate the job aggregator API (Adzuna, with JSearch as fallback). Build the query-builder (form → API params) and response normalizer (raw API job → internal job model). Wire a "Search" button that fetches and displays raw, unranked results. Proves the data pipeline end-to-end.
+3. **LLM Matcher** — Integrate the LLM provider; build prompt construction and response parsing for fit-scoring each job against the profile (score, rationale, mismatch flags). Wire scored results into the dashboard, sorted by fit score. This is where AI-driven ranking comes alive.
+4. **Resume Upload & Parsing** — Add optional resume upload (PDF/docx) with LLM-based parsing to pre-fill the profile form, falling back gracefully to manual entry on parse failure.
+5. **Dashboard Polish** — Add filter/sort controls (company, location, salary, posted date, work mode) on top of ranked results, plus the error-handling paths from this spec (no results, API failures, missing keys) and first-run setup instructions.
+
+Each phase will get its own detailed implementation plan when work on it begins, so later phases can incorporate what's learned from earlier ones.
+
 ## Out of Scope (for MVP)
 
 - Scheduled/background refresh and caching (candidate future enhancement)
