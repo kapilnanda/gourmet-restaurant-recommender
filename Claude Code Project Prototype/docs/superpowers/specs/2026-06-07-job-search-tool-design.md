@@ -70,7 +70,7 @@ Everything runs locally as a single Streamlit process — no backend server, no 
 
 - No existing API access — implementation will need to:
   - Sign up for a job aggregator API (Adzuna or JSearch)
-  - Obtain an LLM provider API key (Anthropic recommended)
+  - Obtain a Gemini API key from Google AI Studio (used for the LLM Matcher and resume parsing, via the `google-generativeai` Python SDK; free tier available, e.g. Gemini 1.5/2.0 Flash)
 - Both keys configured via `.env` / local config, with setup instructions shown if missing
 
 ## Implementation Phases
